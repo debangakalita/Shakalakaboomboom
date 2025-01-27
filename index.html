@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Drawing App</title>
+    <style>
+        .container {
+            display: flex;
+            gap: 20px;
+            margin: 20px;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+        .drawing-section {
+            flex: 0 0 auto;
+            position: relative;
+        }
+        canvas {
+            border: 2px solid black;
+            cursor: crosshair;
+        }
+        .controls {
+            margin: 10px 0;
+        }
+        .image-section {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 600px;
+            width: 600px;
+        }
+        .image-section img {
+            max-height: 400px;
+            max-width: 600px;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            transition: opacity 0.5s ease-out;
+        }
+        .timer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .phase-text {
+            position: fixed;
+            top: 60px;
+            right: 20px;
+            font-size: 18px;
+        }
+        body {
+            margin: 0;
+            padding: 10px;
+            min-height: 100vh;
+        }
+        .next-button {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: none; /* Hidden by default */
+        }
+        .next-button:hover {
+            background-color: #45a049;
+        }
+        .nav-arrows {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 10px;
+        }
+        .arrow-button {
+            padding: 10px 20px;
+            font-size: 24px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 60px;
+        }
+        .arrow-button:hover {
+            background-color: #45a049;
+        }
+        .arrow-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        @media screen and (max-width: 1440px) {
+            canvas {
+                width: 700px;
+                height: 525px;  /* Maintains 4:3 aspect ratio */
+            }
+            .image-section {
+                width: 525px;  /* Proportionally smaller than canvas */
+                height: 525px;
+            }
+            .image-section img {
+                max-height: 350px;
+                max-width: 525px;
+                object-fit: contain;  /* Ensure image maintains aspect ratio */
+            }
+        }
+        @media screen and (max-width: 1280px) {
+            canvas {
+                width: 600px;
+                height: 450px;
+            }
+            .image-section {
+                width: 450px;
+                height: 450px;
+            }
+            .image-section img {
+                max-height: 300px;
+                max-width: 450px;
+                object-fit: contain;
+            }
+        }
+        @media screen and (max-width: 1024px) {
+            canvas {
+                width: 500px;
+                height: 375px;
+            }
+            .image-section {
+                width: 375px;
+                height: 375px;
+            }
+            .image-section img {
+                max-height: 250px;
+                max-width: 375px;
+                object-fit: contain;
+            }
+        }
+        /* Add these media queries for iPad and mobile */
+        @media screen and (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .drawing-section {
+                width: 100%;
+                height: 75vh;  /* 75% of viewport height */
+            }
+
+            canvas {
+                width: 100% !important;
+                height: 100% !important;
+                max-width: 600px;
+                max-height: 450px;
+            }
+
+            .image-section {
+                width: 100%;
+                height: 25vh;  /* 25% of viewport height */
+                margin-top: 10px;
+            }
+
+            .image-section img {
+                max-height: 100%;
+                max-width: 100%;
+                object-fit: contain;
+            }
+
+            /* Adjust controls for better mobile layout */
+            .controls {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 5px;
+                margin: 5px 0;
+            }
+
+            /* Adjust timer and phase text positions */
+            .timer, .phase-text {
+                position: fixed;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+
+            .timer {
+                top: 10px;
+            }
+
+            .phase-text {
+                top: 40px;
+            }
+
+            /* Adjust navigation arrows */
+            .nav-arrows {
+                margin: 5px 0;
+            }
+        }
+
+        /* Additional adjustments for very small screens */
+        @media screen and (max-width: 480px) {
+            canvas {
+                max-width: 100%;
+                max-height: 60vh;
+            }
+
+            .controls button {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="timer" id="timer">10</div>
+    <div class="phase-text" id="phaseText">Memorize the image!</div>
+    <button class="next-button" id="nextButton" onclick="startNextImage()">Next Image</button>
+    <div class="container">
+        <div class="drawing-section">
+            <div class="controls">
+                <button onclick="changeColor('black')">Black</button>
+                <button onclick="changeColor('red')">Red</button>
+                <button onclick="changeColor('blue')">Blue</button>
+                <input type="range" min="1" max="20" value="5" id="brushSize">
+                <button onclick="clearCanvas()">Clear</button>
+            </div>
+            <canvas id="drawingCanvas" width="800" height="600" style="width: 800px; height: 600px;"></canvas>
+            <div class="nav-arrows">
+                <button class="arrow-button" onclick="previousImage()" id="prevButton">←</button>
+                <button class="arrow-button" onclick="nextImage()" id="nextButton">→</button>
+            </div>
+        </div>
+        
+        <div class="image-section" id="imageSection">
+            <img id="referenceImage" src="https://i.kym-cdn.com/photos/images/original/000/000/130/disaster-girl.jpg" alt="Reference Image">
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let currentColor = 'black';
+
+        // Initialize drawing settings
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+
+        // Drawing event listeners
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        // Touch support
+        canvas.addEventListener('touchstart', handleTouch);
+        canvas.addEventListener('touchmove', handleTouch);
+        canvas.addEventListener('touchend', stopDrawing);
+
+        function startDrawing(e) {
+            isDrawing = true;
+            draw(e);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+
+            // Get brush size
+            ctx.lineWidth = document.getElementById('brushSize').value;
+            ctx.strokeStyle = currentColor;
+
+            // Get correct coordinates accounting for canvas scaling
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+            ctx.beginPath();
+        }
+
+        function handleTouch(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent("mousemove", {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            
+            if (e.type === 'touchstart') {
+                startDrawing(mouseEvent);
+            } else if (e.type === 'touchmove') {
+                draw(mouseEvent);
+            }
+        }
+
+        function changeColor(color) {
+            currentColor = color;
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Timer functionality
+        let memorizeTime = 10; // 10 seconds for memorizing
+        let drawingTime = 90; // Changed from 120 to 90 seconds (1:30 minutes)
+        const timerElement = document.getElementById('timer');
+        const imageSection = document.getElementById('imageSection');
+        const phaseText = document.getElementById('phaseText');
+
+        // Memorize phase
+        const memorizePhase = setInterval(() => {
+            memorizeTime--;
+            timerElement.textContent = memorizeTime;
+            
+            if (memorizeTime <= 0) {
+                clearInterval(memorizePhase);
+                imageSection.style.display = 'none';
+                startDrawingPhase();
+            }
+        }, 1000);
+
+        // Drawing phase
+        function startDrawingPhase() {
+            phaseText.textContent = "Time to draw!";
+            timerElement.textContent = "1:30"; // Changed initial display time
+            
+            const drawingPhase = setInterval(() => {
+                drawingTime--;
+                const minutes = Math.floor(drawingTime / 60);
+                const seconds = drawingTime % 60;
+                timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                if (drawingTime <= 0) {
+                    clearInterval(drawingPhase);
+                    endDrawingPhase();
+                }
+            }, 1000);
+        }
+
+        // End phase - show image again
+        function endDrawingPhase() {
+            timerElement.textContent = "Time's up!";
+            phaseText.textContent = "Compare your drawing!";
+            imageSection.style.display = 'flex';
+            imageSection.style.opacity = '1';
+            
+            // Show next button if there are more images
+            if (currentImageIndex < images.length - 1) {
+                document.getElementById('nextButton').style.display = 'block';
+            }
+        }
+
+        const images = [
+            "images/image1.jpg",
+            "images/image2.jpg",
+            "images/image3.jpg",
+            "images/image4.jpg",
+            "images/image5.jpg",
+            "images/image6.jpg"
+        ];
+
+        let currentImageIndex = 0;
+
+        // Update the preloadImages function to include better error handling and logging
+        function preloadImages() {
+            images.forEach((url, index) => {
+                const img = new Image();
+                img.onerror = () => {
+                    console.error(`Failed to load image ${index} from URL: ${url}`);
+                    // You could also implement a fallback mechanism here if needed
+                    alert(`Failed to load image ${index + 1}. Please check your internet connection.`);
+                };
+                img.onload = () => {
+                    console.log(`Successfully loaded image ${index + 1}`);
+                };
+                img.src = url;
+            });
+        }
+
+        // Call preload when page loads
+        window.onload = () => {
+            preloadImages();
+            updateArrowButtons();
+        };
+
+        function startNextImage() {
+            // Reset timers
+            memorizeTime = 10;
+            drawingTime = 90;
+            
+            // Switch to next image
+            currentImageIndex++;
+            const img = document.getElementById('referenceImage');
+            img.onerror = () => {
+                console.error('Failed to load next image');
+                alert('Error loading next image. Please try again.');
+            };
+            img.src = images[currentImageIndex];
+            
+            // Reset display
+            imageSection.style.display = 'flex';
+            document.getElementById('nextButton').style.display = 'none';
+            timerElement.textContent = '10';
+            phaseText.textContent = 'Memorize the image!';
+            
+            // Clear canvas
+            clearCanvas();
+            
+            // Restart timer sequence only after image is loaded
+            img.onload = () => {
+                const memorizePhase = setInterval(() => {
+                    memorizeTime--;
+                    timerElement.textContent = memorizeTime;
+                    
+                    if (memorizeTime <= 0) {
+                        clearInterval(memorizePhase);
+                        imageSection.style.display = 'none';
+                        startDrawingPhase();
+                    }
+                }, 1000);
+            };
+        }
+
+        function previousImage() {
+            if (currentImageIndex > 0) {
+                currentImageIndex--;
+                loadNewImage();
+            }
+        }
+
+        function nextImage() {
+            if (currentImageIndex < images.length - 1) {
+                currentImageIndex++;
+                loadNewImage();
+            }
+        }
+
+        function loadNewImage() {
+            // Clear any existing intervals
+            for (let i = 1; i < 9999; i++) {
+                window.clearInterval(i);
+            }
+            
+            // Reset timers
+            memorizeTime = 10;
+            drawingTime = 90;
+            
+            // Update image
+            const img = document.getElementById('referenceImage');
+            img.src = images[currentImageIndex];
+            
+            // Reset display
+            imageSection.style.display = 'flex';
+            imageSection.style.opacity = '1';
+            timerElement.textContent = '10';
+            phaseText.textContent = 'Memorize the image!';
+            
+            // Clear canvas
+            clearCanvas();
+            
+            // Update arrow buttons state
+            updateArrowButtons();
+            
+            // Start new memorize phase
+            const memorizePhase = setInterval(() => {
+                memorizeTime--;
+                timerElement.textContent = memorizeTime;
+                
+                if (memorizeTime <= 0) {
+                    clearInterval(memorizePhase);
+                    imageSection.style.display = 'none';
+                    startDrawingPhase();
+                }
+            }, 1000);
+        }
+
+        function updateArrowButtons() {
+            document.getElementById('prevButton').disabled = currentImageIndex === 0;
+            document.getElementById('nextButton').disabled = currentImageIndex === images.length - 1;
+        }
+
+        function startMemorizePhase() {
+            const memorizePhase = setInterval(() => {
+                memorizeTime--;
+                timerElement.textContent = memorizeTime;
+                
+                if (memorizeTime <= 0) {
+                    clearInterval(memorizePhase);
+                    imageSection.style.display = 'none';
+                    startDrawingPhase();
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html> 
