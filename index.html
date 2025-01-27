@@ -141,15 +141,24 @@
         }
         /* Add these media queries for iPad and mobile */
         @media screen and (max-width: 768px) {
+            body {
+                margin: 0;
+                padding: 10px;
+                min-height: 100vh;
+            }
+
             .container {
-                flex-direction: column;
+                flex-direction: column !important;  /* Force column layout */
                 align-items: center;
                 gap: 10px;
+                width: 100%;
+                margin: 10px 0;
             }
 
             .drawing-section {
                 width: 100%;
                 height: 75vh;  /* 75% of viewport height */
+                margin-bottom: 10px;
             }
 
             canvas {
@@ -163,6 +172,9 @@
                 width: 100%;
                 height: 25vh;  /* 25% of viewport height */
                 margin-top: 10px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
             }
 
             .image-section img {
@@ -178,9 +190,10 @@
                 justify-content: center;
                 gap: 5px;
                 margin: 5px 0;
+                width: 100%;
             }
 
-            /* Adjust timer and phase text positions */
+            /* Center the timer and phase text */
             .timer, .phase-text {
                 position: fixed;
                 left: 50%;
@@ -198,6 +211,7 @@
             /* Adjust navigation arrows */
             .nav-arrows {
                 margin: 5px 0;
+                width: 100%;
             }
         }
 
